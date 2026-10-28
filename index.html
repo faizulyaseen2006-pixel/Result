@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Examination Result Portal</title>
+<style>
+:root{--navy:#173b63;--navy2:#244d78;--blue:#0788e8;--line:#c8d2dd;--pale:#edf3f8}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#17212b;background:#f4f6f8}
+header{background:linear-gradient(120deg,var(--navy),var(--navy2));color:#fff;padding:22px 16px;text-align:center}
+header h1{font-size:clamp(20px,3vw,30px);margin:0 0 7px}header p{margin:0;font-size:14px}
+.wrap{max-width:1200px;margin:22px auto;padding:0 14px}
+.panel{background:#fff;border:1px solid #d4dce5;border-radius:8px;overflow:hidden;box-shadow:0 3px 12px #102a4410;margin-bottom:18px}
+.panel-title{background:var(--navy);color:#fff;padding:12px 16px;font-weight:bold}
+.controls{display:grid;grid-template-columns:1.1fr 1.1fr 1.2fr;gap:14px;padding:16px}
+label{display:block;font-size:13px;font-weight:700;margin-bottom:6px;color:#33485d}
+input,select{width:100%;min-height:40px;padding:9px 10px;border:1px solid #b9c6d3;border-radius:5px;background:white;font-size:15px}
+.radio-row{display:flex;gap:14px;flex-wrap:wrap;margin:8px 0 12px;font-size:14px}
+.radio-row label{font-weight:400;margin:0;display:flex;align-items:center;gap:6px}.radio-row input{width:auto;min-height:0}
+button{border:0;border-radius:5px;background:var(--blue);color:white;font-weight:700;padding:10px 16px;cursor:pointer}
+button:hover{filter:brightness(.94)}.secondary{background:#5c6f82}.danger{background:#b83232}
+.actions{display:flex;gap:8px;align-items:end}.actions button{min-height:40px}
+.table-wrap{overflow-x:auto;padding:0 14px 16px}
+table{width:100%;border-collapse:collapse;min-width:760px;background:#fff}
+th{background:#173b63;color:#fff;text-align:left;font-weight:600}
+th,td{border:1px solid #cbd5df;padding:10px 9px;font-size:14px;vertical-align:top}
+tbody tr:nth-child(even){background:#f1f5f8}
+.muted{color:#64748b;font-size:13px;padding:0 16px 14px}
+.status{font-weight:bold}.pass{color:#187544}.fail{color:#b42318}
+.hidden{display:none!important}.admin-form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:16px}
+.admin-actions{display:flex;gap:8px;flex-wrap:wrap;padding:0 16px 16px}
+.subjects-help{font-size:12px;color:#596b7c;margin-top:5px}
+.notice{background:#fff7df;border:1px solid #ecd28b;color:#664d03;border-radius:6px;padding:12px 14px;font-size:13px;line-height:1.45;margin-bottom:18px}
+.empty{padding:25px;text-align:center;color:#64748b}
+footer{text-align:center;background:var(--navy);color:#fff;padding:16px;font-size:13px;margin-top:28px}
+@media(max-width:760px){.controls,.admin-form{grid-template-columns:1fr}.actions{align-items:stretch}.actions button{flex:1}.wrap{margin-top:12px}}
+@media print{header,.search-panel,.admin-panel,.notice,.no-print,footer{display:none!important}body{background:white}.wrap{max-width:none;margin:0;padding:0}.panel{border:0;box-shadow:none}.table-wrap{padding:0}th{background:#ddd!important;color:#000!important;print-color-adjust:exact}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Examination Result Portal</h1>
+  <p>Search examination results by roll number, registration number, or name</p>
+</header>
+<main class="wrap">
+  <div class="notice"><strong>Starter version:</strong> Results entered here are saved only in this browser on this device. This is a working prototype, not yet a shared public database. Before publishing real student marks, connect a secure database and protect the admin area.</div>
+
+  <section class="panel search-panel">
+    <div class="panel-title">Select Search Criteria</div>
+    <div class="controls">
+      <div>
+        <label>Search by</label>
+        <div class="radio-row">
+          <label><input type="radio" name="searchType" value="roll" checked> Roll No</label>
+          <label><input type="radio" name="searchType" value="reg"> Registration No</label>
+          <label><input type="radio" name="searchType" value="name"> Name</label>
+        </div>
+        <label for="searchInput" id="searchLabel">Roll Number</label>
+        <input id="searchInput" placeholder="Enter roll number">
+      </div>
+      <div>
+        <label for="college">College / Institution</label>
+        <select id="college"><option>Government Medical College Srinagar</option><option>Other institution</option></select>
+        <label for="exam" style="margin-top:12px">Examination / Session</label>
+        <input id="exam" placeholder="e.g. First Professional MBBS">
+      </div>
+      <div class="actions">
+        <button id="searchBtn">Search Result</button>
+        <button class="secondary" id="showAllBtn">View All</button>
+        <button class="secondary" id="printBtn">Print</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-title">Result</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Roll No</th><th>Registration No</th><th>Name</th><th>Subjects / Marks</th><th>Result</th><th class="no-print">Action</th></tr></thead>
+        <tbody id="resultsBody"><tr><td colspan="6" class="empty">No results to display. Add a result in the admin section below.</td></tr></tbody>
+      </table>
+    </div>
+    <div class="muted" id="resultCount">0 results</div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-title">Filter Results by Marks</div>
+    <div class="controls" style="grid-template-columns:1fr 1fr auto">
+      <div><label for="operator">Condition</label><select id="operator"><option value=">">Greater than (&gt;)</option><option value=">=">At least (&gt;=)</option><option value="<">Less than (&lt;)</option><option value="<=">At most (&lt;=)</option></select></div>
+      <div><label for="threshold">Total marks</label><input id="threshold" type="number" min="0" placeholder="Enter marks"></div>
+      <div class="actions"><button id="filterBtn">Filter</button><button class="secondary" id="clearFilterBtn">Clear</button></div>
+    </div>
+  </section>
+
+  <section class="panel admin-panel">
+    <div class="panel-title">Admin — Manually Add / Manage Results</div>
+    <form id="resultForm">
+      <div class="admin-form">
+        <div><label for="roll">Roll Number *</label><input id="roll" required></div>
+        <div><label for="reg">Registration Number *</label><input id="reg" required></div>
+        <div><label for="studentName">Student Name *</label><input id="studentName" required></div>
+        <div><label for="subject1">Subject 1 and marks</label><input id="subject1" placeholder="e.g. Anatomy: 150/200"></div>
+        <div><label for="subject2">Subject 2 and marks</label><input id="subject2" placeholder="e.g. Physiology: 145/200"></div>
+        <div><label for="subject3">Subject 3 and marks</label><input id="subject3" placeholder="e.g. Biochemistry: 130/200"></div>
+        <div><label for="total">Total Marks *</label><input id="total" type="number" min="0" required></div>
+        <div><label for="maxTotal">Maximum Marks</label><input id="maxTotal" type="number" min="1" value="600"></div>
+        <div><label for="status">Result Status</label><select id="status"><option>PASS</option><option>FAIL</option><option>WITHHELD</option></select></div>
+      </div>
+      <div class="admin-actions">
+        <button type="submit" id="saveBtn">Save Result</button>
+        <button type="button" class="secondary" id="cancelEditBtn" hidden>Cancel Edit</button>
+        <button type="button" class="secondary" id="exportBtn">Export Backup (JSON)</button>
+        <label class="secondary" style="display:inline-flex;align-items:center;padding:10px 14px;border-radius:5px;color:white;background:#5c6f82;cursor:pointer">Import Backup <input type="file" id="importFile" accept=".json,application/json" hidden></label>
+        <button type="button" class="danger" id="clearAllBtn">Delete All Results</button>
+      </div>
+    </form>
+    <div class="muted">Do not use this local-only admin form for real student data on a public shared website. A secure login and shared database are needed first.</div>
+  </section>
+</main>
+<footer>Examination Result Portal · Independent demo website</footer>
+<script>
+const KEY='resultPortalRecordsV1';
+let records=load(), editingId=null, currentView=null;
+const $=id=>document.getElementById(id);
+function load(){try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch{return []}}
+function save(){localStorage.setItem(KEY,JSON.stringify(records))}
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function type(){return document.querySelector('input[name="searchType"]:checked').value}
+function updateSearchLabel(){const t=type();$('searchLabel').textContent=t==='roll'?'Roll Number':t==='reg'?'Registration Number':'Student Name';$('searchInput').placeholder='Enter '+$('searchLabel').textContent.toLowerCase()}
+document.querySelectorAll('input[name="searchType"]').forEach(x=>x.addEventListener('change',updateSearchLabel));
+function subjects(r){return [r.subject1,r.subject2,r.subject3].filter(Boolean).map(esc).join('<br>')||'—'}
+function render(list=records){currentView=list;const body=$('resultsBody');if(!list.length){body.innerHTML='<tr><td colspan="6" class="empty">No matching results found.</td></tr>'}else{body.innerHTML=list.map(r=>`<tr><td>${esc(r.roll)}</td><td>${esc(r.reg)}</td><td>${esc(r.name)}</td><td>${subjects(r)}</td><td><span class="status ${r.status==='PASS'?'pass':r.status==='FAIL'?'fail':''}">${esc(r.status)} / ${esc(r.total)}${r.maxTotal?' of '+esc(r.maxTotal):''}${r.maxTotal?' ('+(100*r.total/r.maxTotal).toFixed(1)+'%)':''}</span></td><td class="no-print"><button class="secondary" onclick="editRecord('${r.id}')">Edit</button> <button class="danger" onclick="deleteRecord('${r.id}')">Delete</button></td></tr>`).join('')}
+$('resultCount').textContent=list.length+' result'+(list.length===1?'':'s')}
+$('searchBtn').addEventListener('click',()=>{const q=$('searchInput').value.trim().toLowerCase();if(!q){render(records);return}const t=type();render(records.filter(r=>(t==='roll'?r.roll:t==='reg'?r.reg:r.name).toLowerCase().includes(q)))});
+$('searchInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('searchBtn').click()});
+$('showAllBtn').addEventListener('click',()=>{ $('searchInput').value='';$('threshold').value='';render(records)});
+$('printBtn').addEventListener('click',()=>window.print());
+$('filterBtn').addEventListener('click',()=>{const n=Number($('threshold').value);if($('threshold').value===''){alert('Enter a total mark to filter.');return}const op=$('operator').value;render(records.filter(r=>op==='>'?r.total>n:op==='>='?r.total>=n:op==='<'?r.total<n:r.total<=n))});
+$('clearFilterBtn').addEventListener('click',()=>{$('threshold').value='';render(records)});
+$('resultForm').addEventListener('submit',e=>{e.preventDefault();const r={id:editingId||crypto.randomUUID(),roll:$('roll').value.trim(),reg:$('reg').value.trim(),name:$('studentName').value.trim(),subject1:$('subject1').value.trim(),subject2:$('subject2').value.trim(),subject3:$('subject3').value.trim(),total:Number($('total').value),maxTotal:Number($('maxTotal').value)||0,status:$('status').value};if(records.some(x=>x.roll.toLowerCase()===r.roll.toLowerCase()&&x.id!==r.id)){if(!confirm('A result with this roll number already exists. Save another record anyway?'))return}if(editingId)records=records.map(x=>x.id===editingId?r:x);else records.push(r);save();resetForm();render(records);alert('Result saved in this browser.')});
+function resetForm(){$('resultForm').reset();$('maxTotal').value=600;editingId=null;$('saveBtn').textContent='Save Result';$('cancelEditBtn').hidden=true}
+window.editRecord=id=>{const r=records.find(x=>x.id===id);if(!r)return;editingId=id;for(const [field,key] of [['roll','roll'],['reg','reg'],['studentName','name'],['subject1','subject1'],['subject2','subject2'],['subject3','subject3'],['total','total'],['maxTotal','maxTotal'],['status','status']])$(field).value=r[key]??'';$('saveBtn').textContent='Update Result';$('cancelEditBtn').hidden=false;$('resultForm').scrollIntoView({behavior:'smooth'})};
+window.deleteRecord=id=>{if(confirm('Delete this result?')){records=records.filter(x=>x.id!==id);save();render(records)}};
+$('cancelEditBtn').addEventListener('click',resetForm);
+$('clearAllBtn').addEventListener('click',()=>{if(confirm('Delete every saved result from this browser? This cannot be undone unless you exported a backup.')){records=[];save();render(records)}});
+$('exportBtn').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(records,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='result-portal-backup.json';a.click();URL.revokeObjectURL(a.href)});
+$('importFile').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{const data=JSON.parse(await f.text());if(!Array.isArray(data)||!data.every(r=>r.roll&&r.reg&&r.name))throw Error();if(confirm('Replace the current results with '+data.length+' imported records?')){records=data;save();render(records);alert('Backup imported.')}}catch{alert('Could not import: please select a valid backup exported from this website.')}e.target.value=''});
+render(records);updateSearchLabel();
+</script>
+</body>
+</html>
